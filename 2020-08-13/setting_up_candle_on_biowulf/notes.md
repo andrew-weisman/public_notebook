@@ -1,5 +1,18 @@
 # Just temporary and for reference to help debugging: Selected notes on attempts to get CANDLE working on Biowulf
 
+## Email to staff on 8/15/20
+
+So I did some experimenting today (my notes are [here](https://github.com/andrew-weisman/public_notebook/blob/master/2020-08-13/setting_up_candle_on_biowulf/notes.md) if you’re interested), and here’s a summary of overall what’s happened:
+
+* I used to be able to run MPI hello world scripts (both basic bash ones and for Swift/T) on an interactive allocation, e.g., “sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell”. This no longer seems to work, as the jobs seem to hang now.
+* The jobs seemed to hang even using a simpler sinteractive command, e.g., “sinteractive -n 2 -N 2 --gres=gpu:p100:1”.
+* Then I tried to see if I could get MPI hello world working in batch mode, and I couldn’t! However, upon adding “--partition=gpu”, they seemed to work in batch mode.
+* However, going back and running the scripts with the exact same calls in interactive mode (i.e., “sinteractive -n 2 -N 2 --gres=gpu:p100:1 --partition=gpu”), they still wouldn’t work and would hang at the mpirun and mpiexec commands.
+* Now that I am able to at least run the testing scripts in batch mode, I am at least more hopeful that CANDLE can work in batch mode, the primary mode of usage.
+* However, debugging will be difficult in batch mode (waiting in the queue multiple/many times), so it would help if we could figure out how to run MPI hello world in interactive mode using e.g. “sinteractive -n 2 -N 2 --gres=gpu:p100:1 --partition=gpu”. But again, not as major of an issue now that I have a workaround by running in batch mode.
+
+Long story short, since something (SLURM?) changed on Biowulf in the past six? months or so, I can no longer run interactive tests on multiple nodes using GPUs. This is not the world’s biggest deal as I can work in batch mode for the time being, but if you had any thoughts on the fix, that would help my debugging (and you’d think it should work anyway since it works in batch mode). Unfortunately Tim your “unset SLURM_MEM_PER_NODE” fix doesn’t seem to help.
+
 ## Attempts on 8/15/20
 
 Adding `unset SLURM_MEM_PER_NODE` prior to mpirun/srun in interactive mode doesn't seem to help:
