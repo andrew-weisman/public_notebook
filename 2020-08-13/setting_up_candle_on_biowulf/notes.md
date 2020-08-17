@@ -1,5 +1,118 @@
 # Just temporary and for reference to help debugging: Selected notes on attempts to get CANDLE working on Biowulf
 
+## Email to staff on 8/17/20
+
+I believe I tried everything you suggested; here are my notes:
+
+* Original command that used to work (hello world jobs would not hang): sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell
+* Swapping out sinteractive for salloc.exe throws salloc.exe: unrecognized option '--no-gres-shell'
+* Removing --no-gres-shell throws salloc.exe: error: QOSMaxNodePerJobLimit
+* Adding --partition=gpu seems to allocate the job (id 63184253) successfully
+* Running srun --no-gres-shell --mem=0 --jobid=63184253 --pty /bin/bash throws srun: unrecognized option '--no-gres-shell'
+* Removing --no-gres-shell seems to enter the job allocation successfully
+* Running my MPI hello world program still hangs; here's exactly what I'm doing once I enter the allocation's shell using srun:
+  * module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
+  * mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+  * mpirun (or mpiexec or srun) a.out
+  * All of these hang, even when adding unset SLURM_MEM_PER_NODE prior to the mpicc command
+  * While one of the jobs is hanging (e.g., mpirun a.out), if I run on Biowulf squeue --steps --Format=jobid,stepid,partition,stepname,stepstate -j 63184253 I get:
+
+```
+weismanal@biowulf:~ $ squeue --steps --Format=jobid,stepid,partition,stepname,stepstate -j 63184253
+JOB_ID              STEPID              PARTITION           NAME                STATE              
+63184253            63184253.0          gpu                 bash                RUNNING            
+63184253            63184253.Extern     gpu                 extern              RUNNING
+```
+ 
+I have left the job allocation (id 63184253) running.
+
+## Attempts on 8/17/20
+
+What I tried:
+
+```
+weismanal@biowulf:~ $ salloc.exe -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell
+salloc.exe: unrecognized option '--no-gres-shell'
+Try "salloc --help" for more information
+weismanal@biowulf:~ $ salloc.exe -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G
+salloc.exe: error: QOSMaxNodePerJobLimit
+salloc.exe: error: Job submit/allocate failed: Job violates accounting/QOS policy (job submit limit, user's size and/or time limits)
+weismanal@biowulf:~ $ salloc.exe -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --partition=gpu
+salloc.exe: Pending job allocation 63184253
+salloc.exe: job 63184253 queued and waiting for resources
+salloc.exe: job 63184253 has been allocated resources
+salloc.exe: Granted job allocation 63184253
+salloc.exe: Waiting for resource configuration
+salloc.exe: Nodes cn[0610,0623-0624] are ready for job
+weismanal@biowulf:~ $ srun --no-gres-shell --mem=0 --jobid=63184253 --pty /bin/bash
+srun: unrecognized option '--no-gres-shell'
+srun: unrecognized option '--no-gres-shell'
+Try "srun --help" for more information
+weismanal@biowulf:~ $ srun --mem=0 --jobid=63184253 --pty /bin/bash
+weismanal@cn0610:~ $ module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
+[+] Loading gcc  9.2.0  ... 
+[+] Loading openmpi 4.0.4/CUDA-10.2  for GCC 9.2.0 
+weismanal@cn0610:~ $ mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+weismanal@cn0610:~ $ mpirun a.out
+^Cweismanal@cn0610:~ $ unset SLURM_MEM_PER_NODE
+weismanal@cn0610:~ $ mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+weismanal@cn0610:~ $ mpirun a.out
+^Cweismanal@cn0610:~ $ mpiexec a.out
+^Cweismanal@cn0610:~ $ srun a.out
+^Csrun: Cancelled pending job step with signal 2
+srun: error: Unable to create step for job 63184253: Job/step already completing or completed
+weismanal@cn0610:~ $ mpirun a.out
+^Cweismanal@cn0610:~ $ 
+```
+
+Notes:
+
+* Original command that used to work (hello world jobs would not hang): `sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell`
+* Swapping out `sinteractive` for `salloc.exe` throws `salloc.exe: unrecognized option '--no-gres-shell'`
+* Removing `--no-gres-shell` throws `salloc.exe: error: QOSMaxNodePerJobLimit`
+* Adding `--partition=gpu` seems to allocate the job (id 63184253) successfully
+* Running `srun --no-gres-shell --mem=0 --jobid=63184253 --pty /bin/bash` throws `srun: unrecognized option '--no-gres-shell'`
+* Removing `--no-gres-shell` seems to enter the job allocation successfully
+* Running my MPI hello world program still hangs; here's exactly what I'm doing once I enter the allocation's shell using `srun`:
+  * `module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0`
+  * `mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c`
+  * `mpirun` (or `mpiexec` or `srun`) ` a.out`
+  * All of these hang, even when adding `unset SLURM_MEM_PER_NODE` prior to the `mpicc` command
+  * While one of the jobs is hanging (e.g., `mpirun a.out`), if I run on Biowulf `squeue --steps --Format=jobid,stepid,partition,stepname,stepstate -j 63184253` I get:
+
+```
+weismanal@biowulf:~ $ squeue --steps --Format=jobid,stepid,partition,stepname,stepstate -j 63184253
+JOB_ID              STEPID              PARTITION           NAME                STATE               
+63184253            63184253.0          gpu                 bash                RUNNING             
+63184253            63184253.Extern     gpu                 extern              RUNNING
+```
+
+## Email to staff on 8/16/20
+
+I appreciate your explanations of what may be going on. I think I get it but experimenting more on Monday will help me to digest what you're saying.
+
+For now, just a few quick notes:
+
+* I will indeed try what you're suggesting ("squeue --steps-- ...") to see if that's indeed what's going on.
+* To get interactive mode to work, I just want to confirm that you're suggesting to try “srun -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=0 --no-gres-shell”?
+* You asked to give me more details on the hello world example I'm running, and I just want to make sure we're on the same page... everything I've been trying is hello world, I'm not trying to run CANDLE yet.
+* I was able to get hello world to work in batch mode... are you saying you want me to elaborate exactly what I'm trying for hello world in interactive mode?
+* Definitely will do regarding not using --partition=gpu in interactive mode... that makes sense, that basically interactive jobs have their own partitions.
+
+## Email from staff on 8/15/20
+
+The underlying issue is an extremely subtle point in how Slurm allocates jobs to batch vs. interactive jobs, specifically, what resources are assigned to different "parts" of the job (what slurm calls steps). Please try step 1 again, and while the job is "hung", run:
+
+```
+squeue --steps --Format=jobid,stepid,partition,stepname,stepstate -j <your job ID>
+```
+
+You will probably see a "bash" step running and your "srun" step waiting for resources. This is because Slurm thinks that all the resources in your job "belong" to your shell, not to the srun command, and therefore it thinks that the srun command does not have sufficient resources to run. Unfortunately, the way slurm does this accounting changes from release to release, sometimes in unexpected ways (and you can probably tell I'm not a big fan of the way Slurm breaks jobs into steps). One other possible way around this that I remember, in addition to --no-gres-shell, is to add "--mem=0" to your *srun* command (not sinteractive), which basically tells Slurm that you don't want any memory for it (but don't worry, as long as you don't exceed the overall job's allocation, this will be fine).
+
+This doesn't happen in batch jobs because there's no "bash" step to eat the resources. I'm not sure why your simple "hello world" test is failing; can you send me exactly what you ran and what didn't work?
+
+One other note - please don't specify a --partition flag to an sinteractive; interactive jobs run in their own partition, which has access to all resources.
+
 ## Email to staff on 8/15/20
 
 So I did some experimenting today (my notes are [here](https://github.com/andrew-weisman/public_notebook/blob/master/2020-08-13/setting_up_candle_on_biowulf/notes.md) if you’re interested), and here’s a summary of overall what’s happened:
