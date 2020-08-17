@@ -2,6 +2,187 @@
 
 ## Email to staff on 8/17/20
 
+Thanks Tim:
+
+* sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell
+* . ~/.bash_profile
+* module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
+* mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+* srun --ntasks=3 --cpus-per-task=16 --mem=0 ~/a.out --> dies (doesn't hang) because "OMPI was not built with SLURM's PMI support"
+* mpirun ~/a.out --> hangs
+* On Biowulf: squeue --steps --Format=jobid,stepid,partition,stepname,stepstate -j 63186810
+* Output:
+
+```
+JOB_ID              STEPID              PARTITION           NAME                STATE              
+63186810            63186810.0          interactive         bash                RUNNING            
+63186810            63186810.Extern     interactive         extern              RUNNING
+```
+ 
+Thanks!
+
+## Following instructions from previous email
+
+```
+weismanal@biowulf:~ $ sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell
+salloc.exe: Pending job allocation 63186810
+salloc.exe: job 63186810 queued and waiting for resources
+salloc.exe: job 63186810 has been allocated resources
+salloc.exe: Granted job allocation 63186810
+salloc.exe: Waiting for resource configuration
+salloc.exe: Nodes cn[0610,0623-0624] are ready for job
+[weismanal@cn0610 ~]$ . ~/.bash_profile
+weismanal@cn0610:~ $ mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+bash: mpicc: command not found
+weismanal@cn0610:~ $ module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
+[+] Loading gcc  9.2.0  ... 
+[+] Loading openmpi 4.0.4/CUDA-10.2  for GCC 9.2.0 
+weismanal@cn0610:~ $ mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+weismanal@cn0610:~ $ srun --ntasks=3 --cpus-per-task=16 --mem=0 ~/a.out 
+[cn0610:26671] OPAL ERROR: Not initialized in file /usr/local/src/openmpi/openmpi-4.0.4/opal/mca/pmix/ext2x/ext2x_client.c at line 112
+--------------------------------------------------------------------------
+The application appears to have been direct launched using "srun",
+but OMPI was not built with SLURM's PMI support and therefore cannot
+execute. There are several options for building PMI support under
+SLURM, depending upon the SLURM version you are using:
+
+  version 16.05 or later: you can use SLURM's PMIx support. This
+  requires that you configure and build SLURM --with-pmix.
+
+  Versions earlier than 16.05: you must use either SLURM's PMI-1 or
+  PMI-2 support. SLURM builds PMI-1 by default, or you can manually
+  install PMI-2. You must then build Open MPI using --with-pmi pointing
+  to the SLURM PMI library location.
+
+Please configure as appropriate and try again.
+--------------------------------------------------------------------------
+*** An error occurred in MPI_Init
+*** on a NULL communicator
+*** MPI_ERRORS_ARE_FATAL (processes in this communicator will now abort,
+***    and potentially your MPI job)
+[cn0610:26671] Local abort before MPI_INIT completed completed successfully, but am not able to aggregate error messages, and not able to guarantee that all other processes were killed!
+srun: error: cn0610: task 0: Exited with exit code 1
+[cn0624:24721] OPAL ERROR: Not initialized in file /usr/local/src/openmpi/openmpi-4.0.4/opal/mca/pmix/ext2x/ext2x_client.c at line 112
+--------------------------------------------------------------------------
+The application appears to have been direct launched using "srun",
+but OMPI was not built with SLURM's PMI support and therefore cannot
+execute. There are several options for building PMI support under
+SLURM, depending upon the SLURM version you are using:
+
+  version 16.05 or later: you can use SLURM's PMIx support. This
+  requires that you configure and build SLURM --with-pmix.
+
+  Versions earlier than 16.05: you must use either SLURM's PMI-1 or
+  PMI-2 support. SLURM builds PMI-1 by default, or you can manually
+  install PMI-2. You must then build Open MPI using --with-pmi pointing
+  to the SLURM PMI library location.
+
+Please configure as appropriate and try again.
+--------------------------------------------------------------------------
+*** An error occurred in MPI_Init
+*** on a NULL communicator
+*** MPI_ERRORS_ARE_FATAL (processes in this communicator will now abort,
+***    and potentially your MPI job)
+[cn0624:24721] Local abort before MPI_INIT completed completed successfully, but am not able to aggregate error messages, and not able to guarantee that all other processes were killed!
+srun: error: cn0624: task 2: Exited with exit code 1
+[cn0623:16087] OPAL ERROR: Not initialized in file /usr/local/src/openmpi/openmpi-4.0.4/opal/mca/pmix/ext2x/ext2x_client.c at line 112
+--------------------------------------------------------------------------
+The application appears to have been direct launched using "srun",
+but OMPI was not built with SLURM's PMI support and therefore cannot
+execute. There are several options for building PMI support under
+SLURM, depending upon the SLURM version you are using:
+
+  version 16.05 or later: you can use SLURM's PMIx support. This
+  requires that you configure and build SLURM --with-pmix.
+
+  Versions earlier than 16.05: you must use either SLURM's PMI-1 or
+  PMI-2 support. SLURM builds PMI-1 by default, or you can manually
+  install PMI-2. You must then build Open MPI using --with-pmi pointing
+  to the SLURM PMI library location.
+
+Please configure as appropriate and try again.
+--------------------------------------------------------------------------
+*** An error occurred in MPI_Init
+*** on a NULL communicator
+*** MPI_ERRORS_ARE_FATAL (processes in this communicator will now abort,
+***    and potentially your MPI job)
+[cn0623:16087] Local abort before MPI_INIT completed completed successfully, but am not able to aggregate error messages, and not able to guarantee that all other processes were killed!
+srun: error: cn0623: task 1: Exited with exit code 1
+weismanal@cn0610:~ $ mpirun ~/a.out 
+^Cweismanal@cn0610:~ ^Crun --ntasks=3 --cpus-per-task=16 --mem=0 ~/a.out 
+weismanal@cn0610:~ $ 
+weismanal@cn0610:~ $ 
+weismanal@cn0610:~ $ mpirun --ntasks=3 --cpus-per-task=16 --mem=0 ~/a.out 
+mpirun: Error: unknown option "--ntasks=3"
+Type 'mpirun --help' for usage.
+weismanal@cn0610:~ $ mpirun -n 3 --cpus-per-task=16 --mem=0 ~/a.out 
+mpirun: Error: unknown option "--cpus-per-task=16"
+Type 'mpirun --help' for usage.
+weismanal@cn0610:~ $ mpirun -n 3 -c 16 --mem=0 ~/a.out 
+mpirun: Error: unknown option "--mem=0"
+Type 'mpirun --help' for usage.
+weismanal@cn0610:~ $ mpirun -n 3 -c 16 -m 0 ~/a.out 
+mpirun: Error: unknown option "-m"
+Type 'mpirun --help' for usage.
+weismanal@cn0610:~ $ mpirun -n 3 -c 16 ~/a.out 
+^Cweismanal@cn0610:~ $ man mpirun
+weismanal@cn0610:~ $ mpirun -n 3 ~/a.out 
+^Cweismanal@cn0610:~ $ mpirun ~/a.out 
+^Cweismanal@cn0610:~ $ 
+```
+
+On Biowulf:
+
+```
+weismanal@biowulf:~ $ squeue --steps --Format=jobid,stepid,partition,stepname,stepstate -j 63186810
+JOB_ID              STEPID              PARTITION           NAME                STATE               
+63186810            63186810.0          interactive         bash                RUNNING             
+63186810            63186810.Extern     interactive         extern              RUNNING
+```
+
+Notes:
+
+* `sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell`
+* `. ~/.bash_profile`
+* `module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0`
+* `mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c`
+* `srun --ntasks=3 --cpus-per-task=16 --mem=0 ~/a.out` --> dies (doesn't hang) because "OMPI was not built with SLURM's PMI support"
+* `mpirun ~/a.out` --> hangs
+* On Biowulf: `squeue --steps --Format=jobid,stepid,partition,stepname,stepstate -j 63186810`
+* Output:
+
+```
+JOB_ID              STEPID              PARTITION           NAME                STATE               
+63186810            63186810.0          interactive         bash                RUNNING             
+63186810            63186810.Extern     interactive         extern              RUNNING
+```
+
+## Email from staff on 8/17/20
+
+I think my instructions got a bit jumbled - let's try this.
+
+First - allocate an interactive node:
+
+```
+biowulf$ sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell
+```
+
+From within that session - try to launch an srun job as follows:
+
+```
+cnXXXX$ srun --ntasks=3 --cpus-per-task=16 --mem=0 /path/to/your_mpi_program
+```
+
+If the srun command hangs - back on biowulf, run:
+
+```
+biowulf$ squeue --steps --Format=jobid,stepid,partition,stepname,stepstate -j <your job ID>
+```
+
+and send me the output.
+
+## Email to staff on 8/17/20
+
 I believe I tried everything you suggested; here are my notes:
 
 * Original command that used to work (hello world jobs would not hang): sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell
