@@ -1,5 +1,60 @@
 # Just temporary and for reference to help debugging: Selected notes on attempts to get CANDLE working on Biowulf
 
+## Summary on 8/27/20 of what we found works for testing MPI on GPU nodes interactively
+
+```bash
+sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell
+. ~/.bash_profile
+module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
+mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+srun --mpi=pmix --ntasks=3 --cpus-per-task=16 --mem=0 ./a.out # both "--mpi=pmix" and "--mem=0" are key here
+```
+
+I explicitly confirmed the above works on 8/27/20 in `/home/weismanal/notebook/2020-08-27/refactoring_candle`. Note that trying `mpirun` instead of `srun` just hanged. It sounds like Tim below seems like we need `srun` here, so at least for interactive testing I'll stick to `srun` and not worry about getting `mpirun` to work interactively.
+
+Equivalent batch script (executed using e.g. `sbatch hello_world.sh`):
+
+```bash
+#!/bin/bash
+
+#SBATCH -n 3
+#SBATCH -N 3
+#SBATCH --ntasks-per-core=1
+#SBATCH --cpus-per-task=16
+#SBATCH --gres=gpu:k20x:1,lscratch:400
+#SBATCH --mem=60G
+#SBATCH --partition=gpu
+
+module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
+mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+srun --ntasks=3 --cpus-per-task=16 --mpi=pmix ./a.out # --mpi=pmix was necessary for getting batch to work!
+```
+
+## Email from staff on 8/17/20
+
+That's great news - and yes, the flags I gave are my recommended way of running (with the obvious adjustment for changing numbers of cores, threads, etc.).
+
+Slurm does not make this as easy as it ought to be, that's for sure...
+
+## Email to staff on 8/17/20
+
+Success!!  And, it certainly needs the “--mem=0” option; otherwise, it hangs with:
+
+```
+weismanal@biowulf:~ $ squeue --steps --Format=jobid,stepid,partition,stepname,stepstate -j 63186810
+JOB_ID              STEPID              PARTITION           NAME                STATE               
+63186810            63186810.0          interactive         bash                RUNNING             
+63186810            63186810.Extern     interactive         extern              RUNNING
+```
+
+This could be great Tim, thanks so much. At the moment I don’t remember what launcher we’re using for CANDLE but I’ll try to use srun with these options, which I assume is what you suggest.
+
+## Email from staff on 8/17/20
+
+Hmmm ... I'm not sure why srun is complaining. That version was compiled against PMIx (not PMI2), which is compatible with SLURM. Can you try adding the following flag to the srun command: "--mpi=pmix".
+
+In my experience, we need to be using srun to get this to work...
+
 ## Email to staff on 8/17/20
 
 Thanks Tim:
@@ -18,7 +73,7 @@ JOB_ID              STEPID              PARTITION           NAME                
 63186810            63186810.0          interactive         bash                RUNNING            
 63186810            63186810.Extern     interactive         extern              RUNNING
 ```
- 
+
 Thanks!
 
 ## Following instructions from previous email
