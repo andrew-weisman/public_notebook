@@ -1,6 +1,6 @@
 # Just temporary and for reference to help debugging: Selected notes on attempts to get CANDLE working on Biowulf
 
-## Summary on 8/27/20 of what we found works for testing MPI on GPU nodes interactively
+## Summary on 8/27/20 of what we found works, particularly for testing MPI on GPU nodes interactively
 
 ```bash
 sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell
@@ -10,9 +10,49 @@ mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_fi
 srun --mpi=pmix --ntasks=3 --cpus-per-task=16 --mem=0 ./a.out # both "--mpi=pmix" and "--mem=0" are key here
 ```
 
-I explicitly confirmed the above works on 8/27/20 in `/home/weismanal/notebook/2020-08-27/refactoring_candle`. Note that trying `mpirun` instead of `srun` just hanged. It sounds like Tim below seems like we need `srun` here, so at least for interactive testing I'll stick to `srun` and not worry about getting `mpirun` to work interactively.
+Sample output on 8/27/20:
 
-Equivalent batch script (executed using e.g. `sbatch hello_world.sh`):
+```
+weismanal@cn0603:~/notebook/2020-08-27/refactoring_candle/take2 $ srun --mpi=pmix --ntasks=3 --cpus-per-task=16 --mem=0 ./a.out
+--------------------------------------------------------------------------
+No OpenFabrics connection schemes reported that they were able to be
+used on a specific port.  As such, the openib BTL (OpenFabrics
+support) will be disabled for this port.
+
+  Local host:           cn0603
+  Local device:         mlx4_0
+  Local port:           1
+  CPCs attempted:       rdmacm, udcm
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+No OpenFabrics connection schemes reported that they were able to be
+used on a specific port.  As such, the openib BTL (OpenFabrics
+support) will be disabled for this port.
+
+  Local host:           cn0604
+  Local device:         mlx4_0
+  Local port:           1
+  CPCs attempted:       rdmacm, udcm
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+No OpenFabrics connection schemes reported that they were able to be
+used on a specific port.  As such, the openib BTL (OpenFabrics
+support) will be disabled for this port.
+
+  Local host:           cn0605
+  Local device:         mlx4_0
+  Local port:           1
+  CPCs attempted:       rdmacm, udcm
+--------------------------------------------------------------------------
+[1598574126.620213] [cn0603:23343:0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn0603 (hostname cn0603), processor cn0603, rank 0 / 3 (CUDA_VISIBLE_DEVICES=0)
+[1598574126.642159] [cn0604:17521:0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn0604 (hostname cn0604), processor cn0604, rank 1 / 3 (CUDA_VISIBLE_DEVICES=0)
+[1598574126.642568] [cn0605:36670:0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn0605 (hostname cn0605), processor cn0605, rank 2 / 3 (CUDA_VISIBLE_DEVICES=0)
+```
+
+Here is the equivalent call in batch mode (e.g., `sbatch hello_world.sh`):
 
 ```bash
 #!/bin/bash
@@ -27,7 +67,50 @@ Equivalent batch script (executed using e.g. `sbatch hello_world.sh`):
 
 module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
 mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
-srun --ntasks=3 --cpus-per-task=16 --mpi=pmix ./a.out # --mpi=pmix was necessary for getting batch to work!
+srun --mpi=pmix --ntasks=3 --cpus-per-task=16 ./a.out
+```
+
+Sample output on 8/27/20:
+
+```
+[+] Loading gcc  9.2.0  ... 
+[+] Loading openmpi 4.0.4/CUDA-10.2  for GCC 9.2.0 
+--------------------------------------------------------------------------
+No OpenFabrics connection schemes reported that they were able to be
+used on a specific port.  As such, the openib BTL (OpenFabrics
+support) will be disabled for this port.
+
+  Local host:           cn0603
+  Local device:         mlx4_0
+  Local port:           1
+  CPCs attempted:       rdmacm, udcm
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+No OpenFabrics connection schemes reported that they were able to be
+used on a specific port.  As such, the openib BTL (OpenFabrics
+support) will be disabled for this port.
+
+  Local host:           cn0605
+  Local device:         mlx4_0
+  Local port:           1
+  CPCs attempted:       rdmacm, udcm
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+No OpenFabrics connection schemes reported that they were able to be
+used on a specific port.  As such, the openib BTL (OpenFabrics
+support) will be disabled for this port.
+
+  Local host:           cn0604
+  Local device:         mlx4_0
+  Local port:           1
+  CPCs attempted:       rdmacm, udcm
+--------------------------------------------------------------------------
+[1598574622.207036] [cn0603:24091:0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn0603 (hostname cn0603), processor cn0603, rank 0 / 3 (CUDA_VISIBLE_DEVICES=0)
+[1598574622.227353] [cn0604:18224:0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn0604 (hostname cn0604), processor cn0604, rank 1 / 3 (CUDA_VISIBLE_DEVICES=0)
+[1598574622.225891] [cn0605:37375:0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn0605 (hostname cn0605), processor cn0605, rank 2 / 3 (CUDA_VISIBLE_DEVICES=0)
 ```
 
 ## Email from staff on 8/17/20
