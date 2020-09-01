@@ -1,5 +1,79 @@
 # Just temporary and for reference to help debugging: Selected notes on attempts to get CANDLE working on Biowulf
 
+## Summary of recommended ways to go for interactive and batch jobs - 9/1/20
+
+### (1) Interactive building and testing of an MPI program on Biowulf
+
+```
+sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k80:1,lscratch:400 --mem=20G --no-gres-shell
+. ~/.bash_profile
+module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
+mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+srun --mpi=pmix --ntasks=3 --cpus-per-task=16 --mem=0 ./a.out # both "--mpi=pmix" and "--mem=0" are key here
+```
+
+### (2) Batch building and testing of an MPI program on Biowulf (by running e.g. `sbatch hello_world.sh`)
+
+```bash
+#!/bin/bash
+#SBATCH -n 3
+#SBATCH -N 3
+#SBATCH --ntasks-per-core=1
+#SBATCH --cpus-per-task=16
+#SBATCH --gres=gpu:k80:1,lscratch:400
+#SBATCH --mem=20G
+#SBATCH --partition=gpu
+module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
+mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+srun --mpi=pmix --ntasks=3 --cpus-per-task=16 ./a.out
+```
+
+## Summary of following emails from staff on 8/28/20
+
+The K20x GPUs are our oldest ones and a bit odd from a configuration perspective. I'd recommend compiling/testing on a K80 or P100 as well, just to make sure that things work right. The K80 would be best for portability across biowulf (executablers will generally run on a system newer than the one they were compiled on but not necessarily on an older system).
+
+Remember, you can use your user dashboard (https://hpc.nih.gov/dashboard) to monitor your jobs and make sure that they are using resources as you expect.
+
+In terms of your question - the --mpi=pmix flag does a bit of magic to talk to the resource manager (slurm) to launch the MPI runtime with the requested resources, so your synopsis is pretty much correct, at least as far as I understand the process.
+
+Otherwise, what you have looks like the way I would do it.
+
+## Email to staff on 8/27/20
+
+I’m wondering if you wouldn’t mind taking a quick look at the following two blocks of code (sample output is at the top section of this webpage titled “Summary on 8/27/20 of what we found works, particularly for testing MPI on GPU nodes interactively”) and confirming that the way I’m both compiling and running an MPI hello world program in both interactive and batch modes is 100% the way you would recommend building and running MPI programs (using one GPU per task) on Biowulf?
+
+\# (1) Interactive building and testing of an MPI program on Biowulf
+
+```
+sinteractive -n 3 -N 3 --ntasks-per-core=1 --cpus-per-task=16 --gres=gpu:k20x:1,lscratch:400 --mem=60G --no-gres-shell
+. ~/.bash_profile
+module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
+mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+srun --mpi=pmix --ntasks=3 --cpus-per-task=16 --mem=0 ./a.out # both "--mpi=pmix" and "--mem=0" are key here
+```
+
+\# (2) Batch building and testing of an MPI program on Biowulf (by running e.g. sbatch hello_world.sh):
+
+```bash
+#!/bin/bash
+#SBATCH -n 3
+#SBATCH -N 3
+#SBATCH --ntasks-per-core=1
+#SBATCH --cpus-per-task=16
+#SBATCH --gres=gpu:k20x:1,lscratch:400
+#SBATCH --mem=60G
+#SBATCH --partition=gpu
+module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
+mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
+srun --mpi=pmix --ntasks=3 --cpus-per-task=16 ./a.out
+```
+
+Please don’t leave out feelings like “Why is Andrew doing that?” or “I would probably do it differently.” I’m trying to learn here and to test and compile programs required for CANDLE as consistently as possible between interactive and batch mode usage of SLURM.
+
+Perhaps you could also please confirm this: Either in interactive or batch SLURM modes, setting --mpi=pmix in the call to srun somehow automatically invokes the currently loaded MPI installation loaded with e.g. “module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0”. Meaning, srun uses the MPI already loaded in the background, which brings meaning to first compiling a program with mpicc and successively running it using srun instead of mpirun. Please let me know if you don’t know what I mean.
+
+Just to be clear, the code blocks I sent you work...I was just making sure that this was the right way to go, particularly the batch part of it, as we didn't previously talk about that part. (I had done some reading on srun and OpenMPI and it made my head spin a bit...) No rush, and thanks very much for your help!
+
 ## Summary on 8/27/20 of what we found works, particularly for testing MPI on GPU nodes interactively
 
 ```bash
