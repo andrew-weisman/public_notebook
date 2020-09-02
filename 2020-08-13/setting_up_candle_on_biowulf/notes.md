@@ -12,6 +12,36 @@ mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_fi
 srun --mpi=pmix --ntasks=3 --cpus-per-task=16 --mem=0 ./a.out # both "--mpi=pmix" and "--mem=0" are key here
 ```
 
+Successful output on 9/1/20:
+
+```
+weismanal@cn4180:~/notebook/2020-09-01/testing_mpi_hello_world/interactive $ srun --mpi=pmix --ntasks=3 --cpus-per-task=16 --mem=0 ./a.out
+--------------------------------------------------------------------------
+WARNING: There was an error initializing an OpenFabrics device.
+
+  Local host:   cn4180
+  Local device: mlx4_0
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+WARNING: There was an error initializing an OpenFabrics device.
+
+  Local host:   cn4213
+  Local device: mlx4_0
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+WARNING: There was an error initializing an OpenFabrics device.
+
+  Local host:   cn4235
+  Local device: mlx4_0
+--------------------------------------------------------------------------
+[1598991271.810371] [cn4180:6935 :0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn4180 (hostname cn4180), processor cn4180, rank 0 / 3 (CUDA_VISIBLE_DEVICES=0)
+[1598991271.920667] [cn4213:41454:0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn4213 (hostname cn4213), processor cn4213, rank 1 / 3 (CUDA_VISIBLE_DEVICES=0)
+[1598991271.925194] [cn4235:40853:0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn4235 (hostname cn4235), processor cn4235, rank 2 / 3 (CUDA_VISIBLE_DEVICES=0)
+```
+
 ### (2) Batch building and testing of an MPI program on Biowulf (by running e.g. `sbatch hello_world.sh`)
 
 ```bash
@@ -26,6 +56,60 @@ srun --mpi=pmix --ntasks=3 --cpus-per-task=16 --mem=0 ./a.out # both "--mpi=pmix
 module load openmpi/4.0.4/cuda-10.2/gcc-9.2.0
 mpicc /data/BIDS-HPC/public/software/distributions/candle/dev_2/wrappers/test_files/hello.c
 srun --mpi=pmix --ntasks=3 --cpus-per-task=16 ./a.out
+```
+
+Seemingly successful output on 9/1/20 (in `/home/weismanal/notebook/2020-09-01/testing_mpi_hello_world/batch/slurm-64053342.out`):
+
+```
+[+] Loading gcc  9.2.0  ... 
+[+] Loading openmpi 4.0.4/CUDA-10.2  for GCC 9.2.0 
+--------------------------------------------------------------------------
+WARNING: There is at least non-excluded one OpenFabrics device found,
+but there are no active ports detected (or Open MPI was unable to use
+them).  This is most certainly not what you wanted.  Check your
+cables, subnet manager configuration, etc.  The openib BTL will be
+ignored for this job.
+
+  Local host: cn4194
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+WARNING: There is at least non-excluded one OpenFabrics device found,
+but there are no active ports detected (or Open MPI was unable to use
+them).  This is most certainly not what you wanted.  Check your
+cables, subnet manager configuration, etc.  The openib BTL will be
+ignored for this job.
+
+  Local host: cn4196
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+WARNING: There is at least non-excluded one OpenFabrics device found,
+but there are no active ports detected (or Open MPI was unable to use
+them).  This is most certainly not what you wanted.  Check your
+cables, subnet manager configuration, etc.  The openib BTL will be
+ignored for this job.
+
+  Local host: cn4195
+--------------------------------------------------------------------------
+[1598992431.090467] [cn4196:12505:0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn4196 (hostname cn4196), processor cn4196, rank 2 / 3 (CUDA_VISIBLE_DEVICES=0)
+[1598992431.111164] [cn4195:39899:0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn4195 (hostname cn4195), processor cn4195, rank 1 / 3 (CUDA_VISIBLE_DEVICES=0)
+[1598992430.878729] [cn4194:24510:0]    ucp_context.c:1437 UCX  WARN  UCP version is incompatible, required: 1.8, actual: 1.7 (release 0 /lib64/libucp.so.0)
+Hello from slurm topology address cn4194 (hostname cn4194), processor cn4194, rank 0 / 3 (CUDA_VISIBLE_DEVICES=0)
+```
+
+---
+
+Tim's response when I asked him about the warnings above, particularly the "WARNING: There is at least non-excluded one OpenFabrics device found...":
+
+```
+That is safe to ignore. If you want to suppress it, run:
+
+export OMPI_MCA_btl="^openib"
+
+before your srun.
+
+Long story short - we don't actually use the openib BTL for communications (we use the UCX PML for InfiniBand in modern OpenMPI builds), so errors from it are safe to ignore.
 ```
 
 ## Summary of following emails from staff on 8/28/20
