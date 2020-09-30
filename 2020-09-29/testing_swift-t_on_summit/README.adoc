@@ -1,0 +1,21 @@
+
+= Swift/T Demos for Summit
+
+== Scheduled
+
+From login node:
+----
+$ ./test-2.sh
+----
+
+== Interactive
+
+From login node:
+----
+$ ./go-interactive.sh
+----
+
+Once compute node session starts:
+----
+$ ./test-interactive-2.sh
+----
