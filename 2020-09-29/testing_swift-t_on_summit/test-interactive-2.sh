@@ -13,5 +13,13 @@ export LD_LIBRARY_PATH=/sw/summit/gcc/6.4.0/lib64:$LD_LIBRARY_PATH
 # Suppress warning:
 OMP_NUM_THREADS=1
 
-stc hello.swift
-jsrun turbine-pilot hello.tic
+# Works for Andrew
+# stc hello.swift
+# jsrun turbine-pilot hello.tic
+
+# Works for Andrew
+# stc b.swift
+# jsrun turbine-pilot b.tic
+
+# Does not work for Andrew
+swift-t hello.swift
