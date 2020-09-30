@@ -24,3 +24,9 @@ Once compute node session starts:
 ```
 $ ./test-interactive-2.sh
 ```
+
+## Interactive node call
+
+```bash
+bsub -W 01:00 -nnodes 2 -P med106 -q debug -Is /bin/bash
+```
