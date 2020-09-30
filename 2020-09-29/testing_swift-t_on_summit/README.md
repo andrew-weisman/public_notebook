@@ -15,7 +15,7 @@ $ ./test-2.sh
 
 ### Andrew's result
 
-In `turbine-output/output.txt`:
+Job fails; in `turbine-output/output.txt`:
 
 ```
 + jsrun -n 4 -r 4 -E TCLLIBPATH -E ADLB_PRINT_TIME=1 -E PYTHONPATH -E TURBINE_OUTPUT=/ccs/home/weismana/turbine-output/2020/09/30/00/39/31 -E TURBINE_JOBNAME=SWIFT -E TCLLIBPATH=/gpfs/alpine/world-shared/med106/wozniak/sw/gcc-6.4.0/swift-t/2020-09-02/turbine/lib -E ADLB_SERVERS=1 -E TURBINE_WORKERS=3 -E TURBINE_STDOUT= -E TURBINE_LOG=0 -E TURBINE_DEBUG=0 -E ADLB_DEBUG=0 -E ADLB_TRACE=0 /gpfs/alpine/world-shared/med106/gounley1/sw/tcl-200327/bin/tclsh8.6 /ccs/home/weismana/turbine-output/2020/09/30/00/39/31/swift-t-hello.7XX.tic
